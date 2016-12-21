@@ -6,29 +6,24 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+
+#include "inverted-index.h"
+
 using namespace std;
 
-struct Posting
-{
-	int docId;
-	vector<int> positions;
-	// how to remove the overhead of copying the vector ?
-	Posting(int id, const vector<int> &ivec) { docId = id; positions = ivec; }
-};
+static map<string, vector<Posting>> inverted_index;
 
-map<wstring, vector<Posting>> inverted_index;
-
-void create_inverted_index(wistream &fin)
+void create_inverted_index(istream &fin)
 {
-	wstring line;
+	string line;
 	while (getline(fin, line))
 	{
 		int page_no = stoi(line);
 		getline(fin, line);
-		wistringstream words(line);
-		wstring word;
+		istringstream words(line);
+		string word;
 		// <word, position list>
-		map <wstring, vector<int>> temp_index;
+		map <string, vector<int>> temp_index;
 		int position = 0;
 		while (words >> word)
 		{
@@ -42,8 +37,10 @@ void create_inverted_index(wistream &fin)
 	}
 }
 
-void print_inverted_index(wostream &out)
+void print_inverted_index(ostream &out)
 {
+	// format:
+	// term|docID1:pos1,pos2;docID2:pos3,pos4,pos5;бн
 	for (const auto &entry : inverted_index)
 	{
 		out << entry.first << '|';
@@ -58,13 +55,48 @@ void print_inverted_index(wostream &out)
 	}
 }
 
-int main()
+// read the inverted index saved on disk into memory
+void read_inverted_index(istream &in)
 {
-	wifstream fin("result0.txt");
-	create_inverted_index(fin);
-	fin.close();
-	wofstream fout("inverted_index.txt");
-	print_inverted_index(fout);
-	fout.close();
-	return 0;
+	// format:
+	// term|docID1:pos1,pos2;docID2:pos3,pos4,pos5;бн
+	string line;
+	while (getline(in, line))
+	{
+		istringstream line_stream(line);
+		// read term
+		string term;
+		getline(line_stream, term, '|');
+		// Postings are separated by ';'
+		string posting_str;
+		vector<Posting> posting_list;
+		while (getline(line_stream, posting_str, ';'))
+		{
+			istringstream posting_stream(posting_str);
+			string docId;
+			getline(posting_stream, docId, ':');
+			vector<int> positions;
+			string pos_str;
+			// position numbers are separated by comma
+			while (getline(posting_stream, pos_str, ','))
+			{
+				positions.push_back(stoi(pos_str));
+			}
+			posting_list.emplace_back(stoi(docId), positions);
+		}
+		inverted_index[term] = posting_list;
+	}
+	
 }
+
+vector<Posting> search_inverted_index(string term)
+{
+	auto it = inverted_index.find(term);
+	if (it != inverted_index.cend())
+	{
+		return it->second;
+	}
+	else
+		return vector<Posting>();
+}
+
