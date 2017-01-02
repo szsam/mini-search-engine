@@ -11,22 +11,52 @@
 using namespace std;
 
 #define DEBUG
+struct Matrixelem;
 
-const string FILEDIR= "D:/计科/大二/数据结构/大作业—搜索引擎/Spider-master/nju";
+
+/************************************************************************/
+/* 一些参数设定                                                         */
+/************************************************************************/
+const string FILEDIR = "D:/计科/大二/数据结构/大作业—搜索引擎/Spider-master/nju";
 const string LISTFILE = FILEDIR + "/pagelist.txt";
 const string RESULTFILE = FILEDIR + "/pagerank.txt";
 
 /*限制读入网页个数，-1为不限制*/
-unsigned NR_Page_Limit = 1500;
+unsigned NR_Page_Limit = -1;
 
-const double eps = 1e-2;
-const double beta = 0.8;
+const double eps = 1e-6;
+const double beta = 0.85;
+const int amplification_factor = 10000;
+/************************************************************************/
 
 #define fabs(x) ((x)>0?(x):-(x))
 
-int NR_PAGE=0;
+/*some global variable*/
+int NR_PAGE = 0;
 map<string, int> mp;
-vector<vector<double>> M;
+vector<Matrixelem> M;
+
+struct Matrixelem
+{
+	int row, col;
+	double value;
+	Matrixelem()
+	{
+		this->row = -1;
+		this->col= -1;
+		this->value = 0;
+	}
+	Matrixelem(int a, int b, double value) :row(a), col(b), value(value) {}
+
+	bool operator == (const Matrixelem & right)
+	{
+		if (this->col == right.col&&this->row == right.row&&this->value == right.value)
+			return 1;
+		else
+			return 0;
+	}
+};
+
 
 //************************************
 // Method:    init_listfile
@@ -51,10 +81,6 @@ void init_listfile()
 	cout << NR_PAGE << endl;
 #endif
 	fin.close();
-
-// init Matrix vector
-	M.resize(NR_PAGE);
-	for_each(M.begin(), M.end(), [&](std::vector<double>& vec) { vec.resize(NR_PAGE); });
 }
 
 string int2str(int temp)
@@ -68,7 +94,19 @@ string int2str(int temp)
 
 
 
-vector<double> vec_operate(const vector<double>& v1, const vector<double>& v2, double fun(double,double))
+//************************************
+// Method:    vec_operate
+// FullName:  vec_operate
+// Access:    public 
+// Returns:   std::vector<double>
+// Qualifier: 向量间运算
+// Parameter: const vector<double> & v1
+// Parameter: const vector<double> & v2
+// Parameter: double fun
+// Parameter: double
+// Parameter: double
+//************************************
+vector<double> vec_operate(const vector<double>& v1, const vector<double>& v2, double fun(double, double))
 {
 	vector<double> resultant; // stores the results
 	for (int i = 0; i < v1.size(); ++i)
@@ -105,10 +143,10 @@ double sqrt_of_pinfangsum(const vector<double>& v1)
 // Returns:   void
 // Qualifier: 导入链接关系
 //************************************
-void init_link(double beta)
+void init_link()
 {
 
-	for (int father_index = 0; father_index < NR_PAGE; father_index ++)
+	for (int father_index = 0; father_index < NR_PAGE; father_index++)
 	{
 		cout << "正在读入第" << father_index << "个文件" << endl;
 		string linkfile = FILEDIR + "/childrenlink/" + int2str(father_index) + ".txt";
@@ -117,78 +155,52 @@ void init_link(double beta)
 		assert(fin);
 #endif
 		string child;
-		int nr_children=0;
-		while (fin>>child)
+		int nr_children = 0;
+		while (fin >> child)
 		{
 			map<string, int>::iterator it = mp.find(child);
 			if (it != mp.end()) {
-				M[it->second][father_index] += 10000*beta;
+				//vector<Matrixelem>::iterator el=find(M.begin(),M.end(),Matrixelem(it->second, father_index, 1));
+				//if (el == M.end())
+				//	M.push_back(Matrixelem(it->second, father_index, 1));
+				//else
+				//	el->value += 1;
+				M.push_back(Matrixelem(it->second, father_index, 1));
 				nr_children++;
 			}
+
 		}
-		//如果是孤立结点，就把他修正为10000.0*beta / NR_PAGE
-		if (nr_children == 0)
-			for (int i = 0; i < NR_PAGE; i++)
-				M[i][father_index] = 10000.0*beta / NR_PAGE;
-		else 
+		if (nr_children)
 		{
-			for (int i = 0; i < NR_PAGE; i++)
-				M[i][father_index] /= nr_children;
+			for_each(M.begin(), M.end(), [&](Matrixelem & it) {if (it.col == father_index)it.value /= nr_children; });
 		}
 		fin.close();
 	}
-
-	//beta 系数
-	for (int i = 0; i < NR_PAGE; i++)
-		for (int j = 0; j < NR_PAGE; j++)
-			M[i][j] += 10000.0*(1 - beta) / NR_PAGE;
-
-	//A-E
-	for (int i = 0; i < NR_PAGE; i++)
-		M[i][i] -= 10000;
 }
 
 
-
 //************************************
-// Method:    gauss_cpivot
-// FullName:  gauss_cpivot
+// Method:    matrix_mul_vector
+// FullName:  matrix_mul_vector
 // Access:    public 
-// Returns:   int
-// Qualifier:高斯消元法列主元gauss消去求解a[][]x[] = b[]返回是否有唯一解, 若有解在b[]中
-// Parameter: vector<vector<double>> a
-// Parameter: vector<double> & b
+// Returns:   std::vector<double>
+// Qualifier: This function mul one n*n matrix with n*1 vector
+// Parameter: vector<Matrixelem> A
+// Parameter: vector<double>x
+// Parameter: int n
 //************************************
-int gauss_cpivot(vector<vector<double>> a, vector<double>&b) {
-	int n = NR_PAGE;
-	int i, j, k, row;
-	double maxp, t;
-	for (k = 0; k < n; k++) {
-		cout << ".";
-		for (maxp = 0, i = k; i<n; i++)
-			if (fabs(a[i][k])>fabs(maxp))
-				maxp = a[row = i][k];
-		if (fabs(maxp) < eps)
-			return 0;
-		if (row != k) {
-			for (j = k; j < n; j++)
-				t = a[k][j], a[k][j] = a[row][j], a[row][j] = t;
-			t = b[k], b[k] = b[row], b[row] = t;
-		}
-		for (j = k + 1; j < n; j++) {
-			a[k][j] /= maxp;
-			for (i = k + 1; i < n; i++)
-				a[i][j] -= a[i][k] * a[k][j];
-		}
-		b[k] /= maxp;
-		for (i = k + 1; i < n; i++)
-			b[i] -= b[k] * a[i][k];
-	}
-	for (i = n - 1; i >= 0; i--)
-		for (j = i + 1; j < n; j++)
-			b[i] -= a[i][j] * b[j];
-	return 1;
+vector<double> matrix_mul_vector(vector<Matrixelem>&A, vector<double>&x, int n)
+{
+	vector<double> result(n);
+	fill(result.begin(), result.end(), 0);
+	for_each(M.begin(),M.end(),
+		[&](auto it){
+		result[it.row] += it.value*x[it.col];
+	});
+	return result;
 }
+
+
 //************************************
 // Method:    pr_caculate
 // FullName:  pr_caculate
@@ -201,70 +213,37 @@ int gauss_cpivot(vector<vector<double>> a, vector<double>&b) {
 //************************************
 vector<double> pr_caculate()
 {
-	//使解向量之和为10000
-	fill(M[0].begin(), M[0].end(), 1);
-
 	//放解的数组
 	vector<double> result(NR_PAGE);
 
 	//初始化解向量
-	result[0] = 10000;
-	fill(result.begin() + 1, result.end(), 0);
+	fill(result.begin(), result.end(), 1.0/NR_PAGE);
+	double diff = 1 << 20;
 
-	//高斯
-	gauss_cpivot(M, result);
+	while (diff>eps)
+	{
+		cout << ".";
+		vector<double> temp(NR_PAGE);
+		temp = matrix_mul_vector(M, result, NR_PAGE);
+		for_each(temp.begin(), temp.end(), [=](double &a) {a = beta*a+(1 - beta) * 1.0/ NR_PAGE; });
+		diff = sqrt_of_pinfangsum(vec_operate(temp, result, [](double a, double b) {return a - b; }));
+		result = temp;
+	}
+
+	for_each(result.begin(), result.end(), [=](double &a) {a *= amplification_factor; });
 	return result;
 
 
 }
 
-//************************************
-// Method:    pr_caculate
-// FullName:  pr_caculate
-// Access:    public 
-// Returns:   std::vector<double>
-// Qualifier:计算PR值
-// Parameter: double eps 
-// Parameter: double init  default=1/NR_page
-// Parameter: double beta
-//************************************
-/*vector<double> pr_caculate(double init, double beta)
-{
-	double diff = 1 << 10; // make absurdly high for now for the while loop
-
-	vector<double> re_PR(NR_PAGE); // page-rank vector
-
-
-	fill(re_PR.begin(), re_PR.end(), init);
-
-
-	while (diff > eps)
-	{
-		vector<double> temp_vec(NR_PAGE);
-		for (int i = 0; i < NR_PAGE; i++)
-		{
-			double line_re = 0;
-			for (int j = 0; j < NR_PAGE; j++)
-			{
-				line_re += M[i][j] * re_PR[j];
-			}
-			temp_vec[i] = beta*line_re+(1 - beta) / NR_PAGE;
-		}
-		diff = sqrt_of_pinfangsum(vec_operate(temp_vec, re_PR, [](double i, double j) {return i - j; }));
-		re_PR = temp_vec;
-	}
-	return re_PR;
-
-}
-*/
 
 int main()
 {
 	init_listfile();
-	cout << "初始化文件列表成功..."<<endl;
-	init_link(0.85);
+	cout << "初始化文件列表成功..." << endl;
+	init_link();
 	cout << "初始化链接关系成功..." << endl;
-	auto re=pr_caculate();
+	auto re = pr_caculate();
 
 	ofstream fout(RESULTFILE);
 #ifdef  DEBUG
@@ -273,5 +252,6 @@ int main()
 	for_each(re.begin(), re.end(), [&fout](double rank) {fout << rank << endl; });
 	fout.close();
 	cout << "计算成功..." << endl;
+
 	return 0;
 }
