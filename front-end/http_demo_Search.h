@@ -18,7 +18,7 @@ JNIEXPORT void JNICALL Java_http_demo_Search_initData
 /*
  * Class:     http_demo_Search
  * Method:    searchResults
- * Signature: ([Ljava/lang/String;)[Lhttp/demo/Result;
+ * Signature: ([Ljava/lang/String;)[Lhttp/demo/Result;f
  */
 JNIEXPORT jobjectArray JNICALL Java_http_demo_Search_searchResults
   (JNIEnv *, jobject, jobjectArray);
