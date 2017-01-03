@@ -1,15 +1,21 @@
 #include <iostream>
+using std::istream; using std::ostream; using std::endl;
 #include <fstream>
 #include <sstream>
+using std::istringstream;
 #include <map>
+using std::map;
 //#include <unordered_map>
-#include <vector>
+// #include <vector>
+#include "vector.h"
+using xmh::vector;
 #include <string>
+using std::string;
 #include <algorithm>
+using std::for_each;
 
 #include "inverted-index.h"
 
-using namespace std;
 
 static map<string, vector<Posting>> inverted_index;
 
@@ -32,7 +38,8 @@ void create_inverted_index(istream &fin)
 		// merge temp_index into our main index
 		for (const auto &e : temp_index)
 		{
-			inverted_index[e.first].emplace_back(page_no, e.second);
+			Posting temp_posting(page_no, e.second);
+			inverted_index[e.first].push_back(temp_posting);
 		}
 	}
 }
@@ -47,9 +54,10 @@ void print_inverted_index(ostream &out)
 		for (const auto &posting : entry.second)
 		{
 			out << posting.docId << ':';
-			for_each(posting.positions.cbegin(), posting.positions.cend() - 1,
+			for_each(posting.positions.begin(), posting.positions.end() - 1,
 				[&out](int p) { out << p << ','; });
-			out << posting.positions.back() << ';';
+			//out << posting.positions.back() << ';';
+			out << *(--posting.positions.end()) << ';';
 		}
 		out << endl;
 	}
@@ -82,7 +90,9 @@ void read_inverted_index(istream &in)
 			{
 				positions.push_back(stoi(pos_str));
 			}
-			posting_list.emplace_back(stoi(docId), positions);
+			//posting_list.emplace_back(stoi(docId), positions);
+			Posting temp_posting(stoi(docId), positions);
+			posting_list.push_back(temp_posting);
 		}
 		inverted_index[term] = posting_list;
 	}
