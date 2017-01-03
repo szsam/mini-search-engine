@@ -15,8 +15,8 @@ namespace xmh {
 		}
 		explicit vector(int capa, const T& val = T())
 		{
-			init_through_capa(capa);
-			newroom(_capacity);
+			initData(capa);
+			newCapacity(_capacity);
 			for (int i = 0; i < _size; i++)
 				_buf[i] = val;
 		}
@@ -31,7 +31,9 @@ namespace xmh {
 			_capacity = bbb._capacity;
 			if (_capacity) {
 				_buf = new T[_capacity];
-				memcpy(_buf, bbb._buf, sizeof(T)*_capacity);
+				//memcpy(_buf, bbb._buf, sizeof(T)*_capacity);
+				for (int i = 0; i < _capacity; i++)
+					_buf[i] = bbb._buf[i];
 			}
 		}
 
@@ -44,14 +46,14 @@ namespace xmh {
 
 			//删除原有空间
 			delete[]_buf;
-			_buf = NULL;
 
 			_size = bbb.size();
 			_capacity = bbb._capacity;
 			if (_capacity) {
 				_buf = new T[_capacity];
-				assert(_buf);
-				memcpy(_buf, bbb._buf, sizeof(T)*_capacity);
+				//memcpy(_buf, bbb._buf, sizeof(T)*_capacity);
+				for (int i = 0; i < _capacity; i++)
+					_buf[i] = bbb._buf[i];
 			}
 			return *this;
 		}
@@ -70,8 +72,8 @@ namespace xmh {
 		{
 			if (_size == _capacity)
 			{
-				int newcapa = calculate_highlevel_Capacity();
-				newroom(newcapa);
+				int capa = calculateCapacity();
+				newCapacity(capa);
 			}
 			_buf[_size++] = t;
 		}
@@ -97,7 +99,7 @@ namespace xmh {
 			int index = iter - begin();
 			if (index < _size && _size>0)
 			{
-				memcpy(_buf + index, _buf + index + 1, (_size - index)*sizeof(T));
+				memmove(_buf + index, _buf + index + 1, (_size - index)*sizeof(T));
 				_buf[--_size] = T();
 			}
 			return iterator(iter);
@@ -119,27 +121,26 @@ namespace xmh {
 		int _capacity;
 		T* _buf;
 
-		void newroom(int capa)
+		void newCapacity(int capa)
 		{
 			_capacity = capa;
 			T* newBuf = new T[_capacity];
-			assert(newBuf);
 			if (_buf)
 			{
-				memcpy(newBuf, _buf, _size*sizeof(T));
+				//memcpy(newBuf, _buf, _size*sizeof(T));
+				for (int i = 0; i < _size; i++)
+					newBuf[i] = _buf[i];
 				delete[] _buf;
-				_buf = NULL;
 			}
 			_buf = newBuf;
 		}
 
-		/*划分出空间*/
-		int calculate_highlevel_Capacity()
+		int calculateCapacity()
 		{
-			return _capacity * 2 + 1;
+			return _capacity * 3 / 2 + 1;
 		}
 
-		void init_through_capa(int capa)
+		void initData(int capa)
 		{
 			_buf = NULL;
 			_size = _capacity = capa > 0 ? capa : 0;
