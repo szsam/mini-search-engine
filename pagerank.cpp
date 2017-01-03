@@ -1,15 +1,17 @@
 #include <cmath>
 #include <string>
-#include <vector>
+//#include <vector>
 #include <numeric>
+#include <stdlib.h>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <fstream>
 #include <assert.h>
 #include <map>
+#include "vector.h"
 using namespace std;
-
+using xmh::vector;
 #define DEBUG
 struct Matrixelem;
 
@@ -17,9 +19,10 @@ struct Matrixelem;
 /************************************************************************/
 /* 一些参数设定                                                         */
 /************************************************************************/
-const string FILEDIR = "D:/计科/大二/数据结构/大作业—搜索引擎/Spider-master/nju";
+const string FILEDIR = "D:/计科/大二/数据结构/大作业—搜索引擎/Spider_/nju";
 const string LISTFILE = FILEDIR + "/pagelist.txt";
 const string RESULTFILE = FILEDIR + "/pagerank.txt";
+const string DEGREEFILE = FILEDIR + "/degreerank.txt";
 
 /*限制读入网页个数，-1为不限制*/
 unsigned NR_Page_Limit = -1;
@@ -93,7 +96,6 @@ string int2str(int temp)
 }
 
 
-
 //************************************
 // Method:    vec_operate
 // FullName:  vec_operate
@@ -159,12 +161,7 @@ void init_link()
 		while (fin >> child)
 		{
 			map<string, int>::iterator it = mp.find(child);
-			if (it != mp.end()) {
-				//vector<Matrixelem>::iterator el=find(M.begin(),M.end(),Matrixelem(it->second, father_index, 1));
-				//if (el == M.end())
-				//	M.push_back(Matrixelem(it->second, father_index, 1));
-				//else
-				//	el->value += 1;
+			if (it != mp.end()&&it->second!=father_index) {
 				M.push_back(Matrixelem(it->second, father_index, 1));
 				nr_children++;
 			}
@@ -236,6 +233,23 @@ vector<double> pr_caculate()
 
 }
 
+void outputdegree()
+{
+	ofstream fout(DEGREEFILE);
+	assert(fout);
+	vector<int>count(NR_PAGE);
+	fill(count.begin(), count.end(), 0);
+	for_each(M.begin(), M.end(), [&](Matrixelem & it){
+		count[it.row]++;
+	}
+	);
+	for_each(count.begin(), count.end(), [&](int &x)
+	{
+		fout << x << endl;
+	});
+	fout.close();
+	cout << "输出度排序文件成功" << endl;
+}
 
 int main()
 {
@@ -243,6 +257,7 @@ int main()
 	cout << "初始化文件列表成功..." << endl;
 	init_link();
 	cout << "初始化链接关系成功..." << endl;
+	outputdegree();
 	auto re = pr_caculate();
 
 	ofstream fout(RESULTFILE);

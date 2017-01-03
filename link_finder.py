@@ -5,6 +5,7 @@ from urllib import parse
 class LinkFinder(HTMLParser):
 
     def __init__(self, base_url, page_url):
+	#single succeed
         super().__init__()
         self.base_url = base_url
         self.page_url = page_url
