@@ -79,7 +79,10 @@ namespace xmh {
 			}
 			_buf[_size++] = t;
 		}
-
+		bool empty()
+		{
+			return _size==0;
+		}
 		void pop_back()
 		{
 			if (!empty())
@@ -118,6 +121,7 @@ namespace xmh {
 			return _size;
 		}
 
+		
 	private:
 		int _size;
 		int _capacity;
