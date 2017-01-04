@@ -1,3 +1,5 @@
+#include "inverted-index.h"
+
 #include <iostream>
 #include <fstream>
 using std::ifstream; using std::ofstream; using std::endl;
@@ -5,7 +7,6 @@ using std::cin; using std::cout; using std::cerr;
 using std::string;
 //using namespace std;
 
-#include "inverted-index.h"
 #include "vector.h"
 using xmh::vector;
 

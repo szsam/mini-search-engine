@@ -1,4 +1,6 @@
 #pragma once
+#include <iterator>
+
 template<typename T>
 class miterator :public std::iterator<std::forward_iterator_tag, T>
 {

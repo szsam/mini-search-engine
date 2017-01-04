@@ -1,5 +1,6 @@
 #pragma once
 #include "vector_iterator.h"
+#include <cassert>
 namespace xmh {
 	template <class T>
 	class vector {
