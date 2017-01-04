@@ -1,11 +1,10 @@
 #pragma once
-template <typename T>
+template<typename T>
 class miterator :public std::iterator<std::forward_iterator_tag, T>
 {
 
 private://迭代器在此处就是一个指针而已
 	T* t;
-
 
 public:
 		miterator()
@@ -90,54 +89,25 @@ public:
 			return t;
 		}
 /************************************************************************/
-		 bool operator!=(const miterator& bbb)
-		{
-			return t != bbb.t;
-		}
 		 bool operator!=(const miterator& bbb)const
 		{
 			return t != bbb.t;
-		}
-
-		 bool operator==(const miterator& bbb)
-		{
-			return t == bbb.t;
 		}
 		 bool operator==(const miterator& bbb)const
 		{
 			return t == bbb.t;
 		}
-
-		 bool operator<(const miterator& bbb)
-		{
-			return t<bbb.t;
-		}
 		 bool operator<(const miterator& bbb)const
 		{
 			return t<bbb.t;
-		}
-
-		 bool operator<=(const miterator& bbb)
-		{
-			return t <= bbb.t;
 		}
 		 bool operator<=(const miterator& bbb)const
 		{
 			return t <= bbb.t;
 		}
-
-		 bool operator>(const miterator& bbb)
-		{
-			return t > bbb.t;
-		}
 		 bool operator>(const miterator& bbb)const
 		{
 			return t > bbb.t;
-		}
-
-		 bool operator>=(const miterator& bbb)
-		{
-			return t >= bbb.t;
 		}
 		 bool operator>=(const miterator& bbb)const
 		{
