@@ -1,6 +1,6 @@
 # mini-search-engine
 ##爬虫
-###利用多线程Thread模块爬取 [南京大学](www.nju.edu.cn)及其指向的网页共计9000个。
+###利用多线程Thread模块爬取 [南京大学](http://www.nju.edu.cn)及其指向的网页共计9000个。
 
 ##分词
 ###使用了[jieba分词](https://github.com/fxsjy/jieba)
